@@ -1,0 +1,22 @@
+[req]
+prompt=no
+distinguished_name = dn
+req_extensions = ext
+input_password = 12345678
+
+
+
+[dn]
+CN = www.credentials.com
+emailAddress = server4everyone77@gmail.com
+CN = www.serverchevoglioio.it
+OU = SERVER4EVERYONE
+O = SERVER
+L = BARRA
+ST = NAPOLI
+C = IT
+
+
+
+[ext]
+subjectAltName = DNS:www.serverchevoglioio.com,DNS:serverchevoglioio.com,DNS:*.serverchevoglioio.com
