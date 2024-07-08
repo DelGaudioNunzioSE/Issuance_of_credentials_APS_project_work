@@ -5,9 +5,12 @@ certificates: ipzs client credca server
 credential_certificate: credca2 client2
 
 clean:
+	rm -rf ./prime256v1.pem
 	rm -rf ./demoCA
 	rm -rf ./client_authority
 	rm -rf ./Trusted
+	rm -f outputsha256.txt
+	rm -f ciphertext.bin
 	rm -f clientcert.pem
 	rm -f clientpub_key.pem
 	rm -f clientrequest.pem
@@ -25,11 +28,11 @@ clean:
 	rm -f serversec_key.pem
 	rm -f signature.bin
 
-ecparam:
+
+configuration:
 	#generates the paramteters from the elliptic curve prime256v1
 	openssl ecparam -name prime256v1 -out prime256v1.pem
 
-configuration:
 	#ipzs
 	#creates the secret key of the ipzs
 	openssl genpkey -paramfile prime256v1.pem -out IPZSsec_key.pem
@@ -50,7 +53,6 @@ configuration:
 	#extracts the public key of the credentials authority from the previous file
 	openssl pkey -in credcasec_key.pem -pubout -out credcapub_key.pem
 	
-	
 	#server
 	#creates the secret key of the server
 	openssl genpkey -paramfile prime256v1.pem -out serversec_key.pem
@@ -60,6 +62,7 @@ configuration:
 
 ipzs:
 	@echo "-----CERTIFICATE OF THE IPZS-----";
+		#x509 -> the version, 365 -> lifetime, IPZSsec_key.pem -> the key for sign, IPZScert.pem -> the certificate, openssl.cnf -> default certificate info
 	openssl req -new -x509 -days 365 -key IPZSsec_key.pem -out IPZScert.pem -config openssl.cnf
 	
 	#section used to organize the file
@@ -67,9 +70,9 @@ ipzs:
 	mkdir demoCA/private
 	mkdir demoCA/newcerts
 	touch demoCA/index.txt demoCA/serial
-	echo "00" >> demoCA/serial
-	cp IPZScert.pem demoCA
-	cp IPZSsec_key.pem demoCA/private
+	echo "00" >> demoCA/serial 			#->serial initial valure
+	cp IPZScert.pem demoCA 				#->certificate
+	cp IPZSsec_key.pem demoCA/private 	#->secret key
 	
 	#changes the name of the file containing the secret key of the IPZS
 	mv demoCA/private/IPZSsec_key.pem demoCA/private/cakey.pem
@@ -80,6 +83,7 @@ ipzs:
 client:
 	#creates the request of a digital certificate
 	@echo "-----CERTIFICATE REQUEST OF THE CLIENT-----";
+		#clientsec_key.pem -> clinet key, clientrequest.pem -> certification request
 	openssl req -new -key clientsec_key.pem -out clientrequest.pem -config clientconfig.cnf
 	
 	#reads the previosus file
@@ -150,9 +154,10 @@ clicaconnection_server:
 	#so we had to create a single file named "client_certbundle.pem" 
 	#that contains all the certificates that proves that the client is reliable i.e. its own certificate and the certificate of the ipzs
 	mkdir Trusted
-	cat clientcert.pem IPZScert.pem > Trusted/client_certbundle.pem
-	cat credcacert.pem IPZScert.pem > Trusted/credca_certbundle.pem
+	cat clientcert.pem IPZScert.pem > Trusted/client_certbundle.pem #client
+	cat credcacert.pem IPZScert.pem > Trusted/credca_certbundle.pem	#autority
 	#allows to credentials authority to operate as a server waiting the requests from the client
+		#credcacert.pem -> authority certificate, credcasec_key.pem -> autority key, Verify 5 -> max chain length, client -> chain
 	openssl s_server -cert credcacert.pem -key credcasec_key.pem -port 8899 -Verify 5 -CAfile Trusted/client_certbundle.pem
 
 clicaconnection_client:
@@ -162,9 +167,9 @@ clicaconnection_client:
 
 compile:
 	@echo "-----COMMUNICATION BETWEEN CLIENT - CREDENTIALS AUTHORITY (CREDENTIALS OBTAINMENT)-----";
-	@gcc -o pin_check pin_check.c;
-	@gcc -o credentials_release credentials_release.c;
-	@gcc -o decrypting decrypting.c
+	@gcc -o pin_check.exe pin_check.c;
+	@gcc -o credentials_release.exe credentials_release.c;
+	@gcc -o decrypting.exe decrypting.c
 
 execute:
 	#In this file there are commands such:

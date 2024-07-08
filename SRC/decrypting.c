@@ -38,10 +38,10 @@ int main() {
     // Rimuove il newline alla fine dell'iv
     iv[strcspn(iv, "\n")] = '\0';
     
-    // Comando per decrittografare il file ciphertext.bin usando l'IV dal file
+    // Comando per decrittografare il file ciphertext.pem usando l'IV dal file
     char decrypt_command[512];
     snprintf(decrypt_command, sizeof(decrypt_command),
-             "openssl enc -base64 -d -aes-256-ctr -pbkdf2 -pass pass:123456789goabcdef123456789goabcdef123456789goabcdef123456789goabcdef -iv %s -in ciphertext.bin -out decrypted_credentials.txt",
+             "openssl enc -base64 -d -aes-256-ctr -pbkdf2 -pass pass:123456789goabcdef123456789goabcdef123456789goabcdef123456789goabcdef -iv %s -in ciphertext.pem -out decrypted_credentials.pem",
              iv);
 
     // Esegui il comando di decrittografia

@@ -58,7 +58,7 @@ int main() {
         // Comando per crittografare il file credentials.txt
         char encrypt_command[512];
         snprintf(encrypt_command, sizeof(encrypt_command),
-                 "openssl enc -base64 -e -aes-256-ctr -in credentials.txt -pbkdf2 -pass pass:123456789goabcdef123456789goabcdef123456789goabcdef123456789goabcdef -iv %s -out ciphertext.bin",
+                 "openssl enc -base64 -e -aes-256-ctr -in ./client_authority/clientcert2.pem -pbkdf2 -pass pass:123456789goabcdef123456789goabcdef123456789goabcdef123456789goabcdef -iv %s -out ciphertext.pem",
                  iv);
 
         // Esegui il comando di crittografia
