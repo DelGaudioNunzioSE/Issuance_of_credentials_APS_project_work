@@ -1,9 +1,12 @@
-all: configuration compile execute
+all: compile execute
 
 certificates: ipzs client credca server
 
+credential_certificate: credca2 client2
+
 clean:
 	rm -rf ./demoCA
+	rm -rf ./client_authority
 	rm -rf ./Trusted
 	rm -f clientcert.pem
 	rm -f clientpub_key.pem
@@ -28,7 +31,7 @@ ecparam:
 
 configuration:
 	#ipzs
-	#creates the secret key of the client
+	#creates the secret key of the ipzs
 	openssl genpkey -paramfile prime256v1.pem -out IPZSsec_key.pem
 	
 	
@@ -56,8 +59,6 @@ configuration:
 	openssl pkey -in clientsec_key.pem -pubout -out serverpub_key.pem
 
 ipzs:
-	
-	#extracts the public key of the client from the previous file
 	@echo "-----CERTIFICATE OF THE IPZS-----";
 	openssl req -new -x509 -days 365 -key IPZSsec_key.pem -out IPZScert.pem -config openssl.cnf
 	
@@ -79,7 +80,7 @@ ipzs:
 client:
 	#creates the request of a digital certificate
 	@echo "-----CERTIFICATE REQUEST OF THE CLIENT-----";
-	openssl req -new -key clientsec_key.pem -out clientrequest.pem -config openssl.cnf
+	openssl req -new -key clientsec_key.pem -out clientrequest.pem -config clientconfig.cnf
 	
 	#reads the previosus file
 	openssl req -in clientrequest.pem -text
@@ -87,13 +88,52 @@ client:
 	#allows the IPZS to sign the certificate of the client
 	openssl ca -in clientrequest.pem -out clientcert.pem -policy policy_anything -config openssl.cnf
 
+client2:
+	#in this section the client will make another request for obtaining the credentials certificate from the 
+	#credentials authority
+	cp clientsec_key.pem client_authority
+	@echo "-----CERTIFICATE REQUEST OF THE CLIENT FOR OBTAINING CREDENTIALS-----";
+	openssl req -new -key client_authority/clientsec_key.pem -out client_authority/clientrequest2.pem -config client_authority/clientconfig.cnf
+	
+	#reads the previosus file
+	openssl req -in client_authority/clientrequest2.pem -text
+	
+	#allows the credentials authority to sign the certificate of the client
+	openssl ca -in client_authority/clientrequest2.pem -out client_authority/clientcert2.pem -policy policy_anything -config client_authority/autocredcaconfig.cnf
+
 credca:
+	#this section is used to make the credentials authority a reliable authority whose task is to sign the 
+	#credential certificates of the clients
 	#creates the request of a digital certificate
 	@echo "-----CERTIFICATE REQUEST OF THE CREDENTIAL AUTHORITY-----";
 	openssl req -new -key credcasec_key.pem -out credcarequest.pem -config caconfig.cnf
 	
 	#allows the IPZS to sign the certificate of the client
 	openssl ca -in credcarequest.pem -out credcacert.pem -policy policy_anything -config openssl.cnf
+
+credca2:
+	mkdir client_authority
+	cp credcasec_key.pem client_authority
+	cp autocredcaconfig.cnf client_authority
+	cp clientconfig.cnf client_authority
+	
+	@echo "-----AUTO-CERTIFICATION OF THE CREDENTIAL AUTHORITY-----";
+	openssl req -new -x509 -days 365 -key client_authority/credcasec_key.pem -out client_authority/autocredcacert.pem -config client_authority/autocredcaconfig.cnf
+	
+	#section used to organize the file
+	mkdir client_authority/demoCA
+	mkdir client_authority/demoCA/private
+	mkdir client_authority/demoCA/newcerts
+	touch client_authority/demoCA/index.txt client_authority/demoCA/serial
+	echo "00" >> client_authority/demoCA/serial
+	cp client_authority/autocredcacert.pem client_authority/demoCA
+	cp client_authority/credcasec_key.pem client_authority/demoCA/private
+	
+	#changes the name of the file containing the secret key of the credentials authority
+	mv client_authority/demoCA/private/credcasec_key.pem client_authority/demoCA/private/cakey.pem
+	
+	#same for the certificate of the credentials authority
+	mv client_authority/demoCA/autocredcacert.pem client_authority/demoCA/cacert.pem
 
 server:
 	#creates the request of a digital certificate
@@ -111,14 +151,14 @@ clicaconnection_server:
 	#that contains all the certificates that proves that the client is reliable i.e. its own certificate and the certificate of the ipzs
 	mkdir Trusted
 	cat clientcert.pem IPZScert.pem > Trusted/client_certbundle.pem
-	
+	cat credcacert.pem IPZScert.pem > Trusted/credca_certbundle.pem
 	#allows to credentials authority to operate as a server waiting the requests from the client
 	openssl s_server -cert credcacert.pem -key credcasec_key.pem -port 8899 -Verify 5 -CAfile Trusted/client_certbundle.pem
 
 clicaconnection_client:
 	#to run the client another terminal is needed
 	#allows the client to operate as a client
-	openssl s_client -cert clientcert.pem -key clientsec_key.pem -connect 127.0.0.1:8899 -CAfile Trusted/client_certbundle.pem -verify_return_error
+	openssl s_client -cert clientcert.pem -key clientsec_key.pem -connect 127.0.0.1:8899 -CAfile Trusted/credca_certbundle.pem -verify_return_error
 
 compile:
 	@echo "-----COMMUNICATION BETWEEN CLIENT - CREDENTIALS AUTHORITY (CREDENTIALS OBTAINMENT)-----";
@@ -146,10 +186,11 @@ cliserconnection_server:
 	#same as clicaconnection: a double terminal is needeed, one for the server and one for the client
 	#the diffrence here is that we run the server with the option -WWW necessary for return a resource if the client connect to a browser
 	#in this case the resource is a simple html file named resource.html
-	
+	cat clientcert.pem client_authority/clientcert2.pem IPZScert.pem > Trusted/client2_certbundle.pem
+	cat servercert.pem IPZScert.pem > Trusted/server_certbundle.pem
 	#allows the server to run as a server
-	openssl s_server -cert servercert.pem -key serversec_key.pem -port 8899 -Verify 5 -CAfile Trusted/client_certbundle.pem -WWW
+	openssl s_server -cert servercert.pem -key serversec_key.pem -port 8899 -Verify 5 -CAfile Trusted/client2_certbundle.pem -WWW
 
 cliserconnection_client:
 	#allows the client to run as a client
-	openssl s_client -cert clientcert.pem -key clientsec_key.pem -connect 127.0.0.1:8899 -CAfile Trusted/client_certbundle.pem -verify_return_error
+	openssl s_client -cert clientcert.pem -key clientsec_key.pem -connect 127.0.0.1:8899 -CAfile Trusted/server_certbundle.pem -verify_return_error
