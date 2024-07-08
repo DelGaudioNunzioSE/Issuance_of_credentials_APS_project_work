@@ -47,7 +47,7 @@ int main() {
     // Esegui il comando di decrittografia
     int decrypt_status = execute_command(decrypt_command);
     if (decrypt_status == 0) {
-        printf("Credenziali ottenute con successo nel file decrypted_credentials.txt.\n");
+        printf("Credenziali ottenute con successo nel file decrypted_credentials.pem.\n");
     } else {
         printf("Errore nella decrittografia delle credenziali.\n");
     }

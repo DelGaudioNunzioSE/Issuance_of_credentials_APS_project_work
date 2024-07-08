@@ -19,7 +19,7 @@ int execute_command(const char *command) {
 
 int main() {
     // Comando per verificare la firma
-    const char *verify_command = "openssl dgst -verify clientpub_key.pem -signature signature.bin outputsha256.txt";
+    const char *verify_command = "openssl dgst -verify ./KEY/clientpub_key.pem -signature signature.bin outputsha256.txt";
     
     // Esegui il comando di verifica
     int verify_status = execute_command(verify_command);

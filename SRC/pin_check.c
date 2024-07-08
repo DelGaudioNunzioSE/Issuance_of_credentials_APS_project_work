@@ -23,11 +23,11 @@ int main(int argc, char* argv[]) {
         char command[256];
 
         // Genera l'hash del file di testo
-        snprintf(command, sizeof(command), "openssl dgst -sha256 request.txt > outputsha256.txt");
+        snprintf(command, sizeof(command), "openssl dgst -sha256 randombits.txt > outputsha256.txt");
         executeCommand(command);
 
         // Firma il file hashato
-        snprintf(command, sizeof(command), "openssl dgst -sign clientsec_key.pem -out signature.bin outputsha256.txt");
+        snprintf(command, sizeof(command), "openssl dgst -sign ./KEY/clientsec_key.pem -out signature.bin outputsha256.txt");
         executeCommand(command);
 
         printf("Firma digitale eseguita con successo.\n");
