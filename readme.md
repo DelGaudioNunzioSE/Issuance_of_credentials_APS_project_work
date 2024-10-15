@@ -5,18 +5,22 @@
 - **Ciaravola Giosuè**
   - Email: g.ciaravola3@studenti.unisa.it
   - Student ID: 0622702177
+  - github: https://github.com/GiosuCiaravola
 
 - **Conato Christian**
   - Email: c.conato@studenti.unisa.it
   - Student ID: 0622702273
+  - github: https://github.com/MrElectric01
 
 - **Del Gaudio Nunzio**
   - Email: n.delgaudio5@studenti.unisa.it
   - Student ID: 0622702277
+  - github: https://github.com/TheNightWatchman
 
 - **Garofalo Mariachiara**
   - Email: m.garofalo38@studenti.unisa.it
   - Student ID: 0622702173
+  - github: https://github.com/Mariachiar
 
 
 ## HOW TO USE:
